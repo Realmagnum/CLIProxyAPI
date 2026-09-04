@@ -68,7 +68,12 @@ func (h *OpenAIAPIHandler) OpenAIModels(c *gin.Context) {
 	// Get all available models
 	allModels := h.Models()
 
-	// Filter to only include the 4 required fields: id, object, created, owned_by
+	// Preserve the 4 OpenAI-required fields and additionally surface context
+	// metadata the registry already carries (context_length, max_context_length,
+	// max_completion_tokens) so OpenAI-compatible clients that auto-discover
+	// models (Hermes with discover_models, OpenCode, etc.) can set correct
+	// per-model context limits instead of falling back to a guessed value.
+	// Extra fields are a valid extension of the OpenAI /v1/models schema.
 	filteredModels := make([]map[string]any, len(allModels))
 	for i, model := range allModels {
 		filteredModel := map[string]any{
@@ -84,6 +89,13 @@ func (h *OpenAIAPIHandler) OpenAIModels(c *gin.Context) {
 		// Add owned_by field if it exists
 		if ownedBy, exists := model["owned_by"]; exists {
 			filteredModel["owned_by"] = ownedBy
+		}
+
+		// Surface context metadata when the underlying ModelInfo carries it.
+		for _, key := range []string{"context_length", "max_context_length", "max_completion_tokens"} {
+			if v, exists := model[key]; exists {
+				filteredModel[key] = v
+			}
 		}
 
 		filteredModels[i] = filteredModel
