@@ -133,6 +133,70 @@ func TestModelsDispatchKeepsOrdinaryOpenAIResponse(t *testing.T) {
 	}
 }
 
+func TestModelsSurfacesContextLengthForAutoDiscoveringClients(t *testing.T) {
+	modelRegistry := registry.GetGlobalRegistry()
+	clientID := "test-context-length-models"
+	modelRegistry.RegisterClient(clientID, "openai", []*registry.ModelInfo{
+		{ID: "ctx-model", ContextLength: 400000, MaxContextLength: 400000, MaxCompletionTokens: 64000, Created: 1770912000, OwnedBy: "openai"},
+		{ID: "no-ctx-model"},
+	})
+	t.Cleanup(func() { modelRegistry.UnregisterClient(clientID) })
+
+	server := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	req.Header.Set("Authorization", "Bearer test-key")
+	req.Header.Set("User-Agent", "curl/8.7.1")
+	recorder := httptest.NewRecorder()
+	server.engine.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", recorder.Code, recorder.Body.String())
+	}
+	var response struct {
+		Object string           `json:"object"`
+		Data   []map[string]any `json:"data"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	// Models that carry context metadata must now surface it on the plain
+	// /v1/models response (no client_version) so auto-discovering agents can
+	// set correct per-model limits.
+	var withCtx, noCtx int
+	for _, model := range response.Data {
+		id, _ := model["id"].(string)
+		switch id {
+		case "ctx-model":
+			withCtx++
+			if got := model["context_length"]; got != float64(400000) {
+				t.Fatalf("ctx-model context_length = %#v, want 400000 (body=%s)", got, recorder.Body.String())
+			}
+			if got := model["max_context_length"]; got != float64(400000) {
+				t.Fatalf("ctx-model max_context_length = %#v, want 400000", got)
+			}
+			if got := model["max_completion_tokens"]; got != float64(64000) {
+				t.Fatalf("ctx-model max_completion_tokens = %#v, want 64000", got)
+			}
+			if got, ok := model["created"].(float64); !ok || got != 1770912000 {
+				t.Fatalf("ctx-model created = %#v, want 1770912000", model["created"])
+			}
+			if got := model["owned_by"]; got != "openai" {
+				t.Fatalf("ctx-model owned_by = %#v, want openai", got)
+			}
+		case "no-ctx-model":
+			noCtx++
+			// Zero-context models must not gain a context_length key.
+			if _, exists := model["context_length"]; exists {
+				t.Fatalf("no-ctx-model leaked empty context_length: %#v", model)
+			}
+		}
+	}
+	if withCtx != 1 || noCtx != 1 {
+		t.Fatalf("withCtx=%d noCtx=%d, want both present (body=%s)", withCtx, noCtx, recorder.Body.String())
+	}
+}
+
 func TestGrokHomeModelAdapterOmitsReasoning(t *testing.T) {
 	models := grokModelsFromHomeEntries([]homeModelEntry{
 		{id: "home-model", displayName: "Home Model", contextLength: 1234},
