@@ -29,4 +29,6 @@ jobs:
         git merge upstream/$REF --no-ff -m "auto-merge upstream/$REF @ $(date)"
         git push origin main
     - name: Trigger docker-build-patched
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: gh workflow run docker-build-patched.yml
