@@ -7,6 +7,10 @@ on:
       ref:
         description: 'Upstream ref (main/dev/tag)'
         default: 'main'
+
+permissions:
+  contents: write
+  actions: write
 jobs:
   merge:
     runs-on: ubuntu-latest
