@@ -31,4 +31,4 @@ jobs:
     - name: Trigger docker-build-patched
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh workflow run docker-build-patched.yml
+      run: gh workflow run docker-build-patched.yml --repo ${{ github.repository }}
