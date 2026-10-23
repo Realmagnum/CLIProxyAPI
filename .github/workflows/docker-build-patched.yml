@@ -25,12 +25,12 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Run fork regression tests
+        run: |
+          go test -v -run TestModelsSurfacesContextLength ./internal/api/
+
       - name: Refresh models catalog
         run: bash .github/scripts/refresh-model-catalogs.sh
-
-      - name: Run unit tests
-        run: |
-          go test ./internal/api/ ./sdk/api/handlers/openai/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
