@@ -37,6 +37,30 @@ func TestComputeOpenAICompatModelsHash_IncludesImageFlag(t *testing.T) {
 	}
 }
 
+func TestComputeOpenAICompatModelsHash_IncludesTokenLimits(t *testing.T) {
+	base := ComputeOpenAICompatModelsHash([]config.OpenAICompatibilityModel{{Name: "model", Alias: "alias"}})
+	if base == "" {
+		t.Fatal("hash should not be empty")
+	}
+
+	withContext := ComputeOpenAICompatModelsHash([]config.OpenAICompatibilityModel{{
+		Name: "model", Alias: "alias", MaxContextLength: 1048576,
+	}})
+	if base == withContext {
+		t.Fatal("hash should change when max-context-length changes")
+	}
+
+	withCompletion := ComputeOpenAICompatModelsHash([]config.OpenAICompatibilityModel{{
+		Name: "model", Alias: "alias", MaxCompletionTokens: 384000,
+	}})
+	if base == withCompletion {
+		t.Fatal("hash should change when max-completion-tokens changes")
+	}
+	if withContext == withCompletion {
+		t.Fatal("context and completion token limits should hash differently")
+	}
+}
+
 func TestComputeOpenAICompatModelsHashIncludesModalities(t *testing.T) {
 	base := []config.OpenAICompatibilityModel{{Name: "model", InputModalities: []string{"text"}, OutputModalities: []string{"text"}}}
 	inputChanged := []config.OpenAICompatibilityModel{{Name: "model", InputModalities: []string{"text", "image"}, OutputModalities: []string{"text"}}}
