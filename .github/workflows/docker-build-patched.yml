@@ -29,6 +29,7 @@ jobs:
         run: |
           go test -v -run TestModelsSurfacesContextLength ./internal/api/
           go test -v -run 'TestBuildOpenAICompatibilityConfigModelsPropagatesMaxCompletionTokens|TestMaxContextLengthConfigDecoding' ./internal/config/ ./sdk/cliproxy/
+          go test -v -run TestComputeOpenAICompatModelsHash_IncludesTokenLimits ./internal/watcher/diff/
 
       - name: Refresh models catalog
         run: bash .github/scripts/refresh-model-catalogs.sh
