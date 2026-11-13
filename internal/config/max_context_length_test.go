@@ -9,6 +9,7 @@ import (
 
 func TestMaxContextLengthConfigDecoding(t *testing.T) {
 	const want = 1048576
+	const wantCompletion = 384000
 	const yamlConfig = `codex-api-key:
   - models:
       - name: codex-upstream
@@ -39,8 +40,9 @@ openai-compatibility:
       - name: compat-upstream
         alias: compat-alias
         max-context-length: 1048576
+        max-completion-tokens: 384000
 `
-	const jsonConfig = `{"codex-api-key":[{"models":[{"name":"codex-upstream","alias":"codex-alias","max-context-length":1048576}]}],"claude-api-key":[{"models":[{"name":"claude-upstream","alias":"claude-alias","max-context-length":1048576}]}],"gemini-api-key":[{"models":[{"name":"gemini-upstream","alias":"gemini-alias","max-context-length":1048576}]}],"interactions-api-key":[{"models":[{"name":"interactions-upstream","alias":"interactions-alias","max-context-length":1048576}]}],"xai-api-key":[{"models":[{"name":"xai-upstream","alias":"xai-alias","max-context-length":1048576}]}],"openai-compatibility":[{"models":[{"name":"compat-upstream","alias":"compat-alias","max-context-length":1048576}]}]}`
+	const jsonConfig = `{"codex-api-key":[{"models":[{"name":"codex-upstream","alias":"codex-alias","max-context-length":1048576}]}],"claude-api-key":[{"models":[{"name":"claude-upstream","alias":"claude-alias","max-context-length":1048576}]}],"gemini-api-key":[{"models":[{"name":"gemini-upstream","alias":"gemini-alias","max-context-length":1048576}]}],"interactions-api-key":[{"models":[{"name":"interactions-upstream","alias":"interactions-alias","max-context-length":1048576}]}],"xai-api-key":[{"models":[{"name":"xai-upstream","alias":"xai-alias","max-context-length":1048576}]}],"openai-compatibility":[{"models":[{"name":"compat-upstream","alias":"compat-alias","max-context-length":1048576,"max-completion-tokens":384000}]}]}`
 
 	for _, testCase := range []struct {
 		name   string
@@ -80,6 +82,10 @@ openai-compatibility:
 				if model.got != want {
 					t.Errorf("%s max-context-length = %d, want %d", model.name, model.got, want)
 				}
+			}
+
+			if got := cfg.OpenAICompatibility[0].Models[0].MaxCompletionTokens; got != wantCompletion {
+				t.Errorf("openai compatibility max-completion-tokens = %d, want %d", got, wantCompletion)
 			}
 		})
 	}

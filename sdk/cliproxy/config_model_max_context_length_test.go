@@ -90,3 +90,33 @@ func TestBuildConfigModelsPropagatesMaxContextLength(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildOpenAICompatibilityConfigModelsPropagatesMaxCompletionTokens(t *testing.T) {
+	const (
+		wantContext    = 1000000
+		wantCompletion = 384000
+	)
+
+	models := buildOpenAICompatibilityConfigModels(&config.OpenAICompatibility{
+		Models: []config.OpenAICompatibilityModel{
+			{
+				Name: "limit-upstream", Alias: "limit-alias",
+				MaxContextLength: wantContext, MaxCompletionTokens: wantCompletion,
+			},
+			{Name: "unlimited-upstream", Alias: "unlimited-alias"},
+		},
+	})
+	if len(models) != 2 {
+		t.Fatalf("models = %d, want 2", len(models))
+	}
+
+	if models[0].MaxCompletionTokens != wantCompletion {
+		t.Errorf("max completion tokens = %d, want %d", models[0].MaxCompletionTokens, wantCompletion)
+	}
+	if models[0].ContextLength != wantContext {
+		t.Errorf("context length = %d, want %d", models[0].ContextLength, wantContext)
+	}
+	if models[1].MaxCompletionTokens != 0 {
+		t.Errorf("unconfigured max completion tokens = %d, want 0", models[1].MaxCompletionTokens)
+	}
+}

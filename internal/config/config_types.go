@@ -1162,6 +1162,10 @@ type OpenAICompatibilityModel struct {
 	// OutputModalities declares supported output modalities when known (e.g. text, image).
 	OutputModalities []string `yaml:"output-modalities,omitempty" json:"output-modalities,omitempty"`
 
+	// MaxCompletionTokens overrides the maximum output token count advertised to clients.
+	// Zero leaves the value unset, so /v1/models omits max_completion_tokens.
+	MaxCompletionTokens int `yaml:"max-completion-tokens,omitempty" json:"max-completion-tokens,omitempty"`
+
 	// IsCompat preserves Claude thinking blocks for compatible upstreams.
 	// Default false keeps the normal signature validation behavior.
 	IsCompat bool `yaml:"is-compat,omitempty" json:"is-compat,omitempty"`
@@ -1181,6 +1185,7 @@ func (m OpenAICompatibilityModel) GetAlias() string { return m.Alias }
 
 func (m OpenAICompatibilityModel) GetDisplayName() string          { return m.DisplayName }
 func (m OpenAICompatibilityModel) GetMaxContextLength() int        { return m.MaxContextLength }
+func (m OpenAICompatibilityModel) GetMaxCompletionTokens() int     { return m.MaxCompletionTokens }
 func (m OpenAICompatibilityModel) GetForceMapping() bool           { return m.ForceMapping }
 func (m OpenAICompatibilityModel) GetIsCompat() bool               { return m.IsCompat }
 func (m OpenAICompatibilityModel) GetUseMaxCompletionTokens() bool { return m.UseMaxCompletionTokens }

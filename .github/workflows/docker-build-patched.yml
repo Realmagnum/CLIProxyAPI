@@ -28,6 +28,7 @@ jobs:
       - name: Run fork regression tests
         run: |
           go test -v -run TestModelsSurfacesContextLength ./internal/api/
+          go test -v -run 'TestBuildOpenAICompatibilityConfigModelsPropagatesMaxCompletionTokens|TestMaxContextLengthConfigDecoding' ./internal/config/ ./sdk/cliproxy/
 
       - name: Refresh models catalog
         run: bash .github/scripts/refresh-model-catalogs.sh
